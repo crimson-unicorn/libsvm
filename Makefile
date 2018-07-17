@@ -15,6 +15,8 @@ lib: svm.o
 
 svm-predict: svm-predict.c svm.o
 	$(CXX) $(CFLAGS) svm-predict.c svm.o -o svm-predict -lm
+incocsvm-predict: incocsvm-predict.c svm.o
+	$(CXX) $(CFLAGS) incocsvm-predict.c svm.o -o incocsvm-predict -lm
 svm-train: svm-train.c svm.o
 	$(CXX) $(CFLAGS) svm-train.c svm.o -o svm-train -lm
 incocsvm-train: incocsvm-train.c svm.o

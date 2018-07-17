@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 	char model_num[256];
 
 	parse_command_line(argc, argv, input_file_name, model_file_name);
-	strcat(model_file_name_copy, model_file_name);
+	strcpy(model_file_name_copy, model_file_name);
 	read_problem(input_file_name);
 
 	profile = Malloc(struct svm_model *, (unsigned long)num_model);
