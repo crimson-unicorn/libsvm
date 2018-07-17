@@ -44,6 +44,7 @@ struct svm_parameter
 	double p;	/* for EPSILON_SVR */
 	int shrinking;	/* use the shrinking heuristics */
 	int probability; /* do probability estimates */
+	int num_train; /* total number of training instances */
 };
 
 //
