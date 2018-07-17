@@ -29,7 +29,7 @@ static char* readline(FILE *input) {
 	if(fgets(line,max_line_len,input) == NULL)
 		return NULL;
 
-	while(strrchr(line,'\n') == NULL) {
+	while(strrchr(line, '\n') == NULL) {
 		max_line_len *= 2;
 		line = (char *)realloc(line, (size_t)max_line_len);
 		len = (int)strlen(line);
