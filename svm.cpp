@@ -2884,6 +2884,7 @@ bool read_model_header(FILE *fp, svm_model* model)
 
 }
 
+
 svm_model *svm_load_model(const char *model_file_name)
 {
 	FILE *fp = fopen(model_file_name,"rb");

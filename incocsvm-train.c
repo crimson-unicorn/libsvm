@@ -94,10 +94,13 @@ static char* readline(FILE *input) {
 int main(int argc, char **argv) {
 	char input_file_name[1024];
 	char model_file_name[1024];
+	char model_file_name_copy[1024];
 	const char *error_msg;
 	int i;
+	char model_num[256];
 
 	parse_command_line(argc, argv, input_file_name, model_file_name);
+	strcat(model_file_name_copy, model_file_name);
 	read_problem(input_file_name);
 
 	profile = Malloc(struct svm_model *, (unsigned long)num_model);
@@ -115,10 +118,14 @@ int main(int argc, char **argv) {
 		}
 		else {
 			profile[i] = svm_train(prob_set[i], &param);
+
+			sprintf(model_num, "%d", i);
+			strcat(model_file_name, model_num);
 			if (svm_save_model(model_file_name, profile[i])) {
 				fprintf(stderr, "can't save model %d to file %s\n", i, model_file_name);
 				exit(1);
 			}
+			strcpy(model_file_name, model_file_name_copy);
 			svm_free_and_destroy_model(&profile[i]);
 		}
 		free(prob_set[i]->y);
