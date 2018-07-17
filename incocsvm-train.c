@@ -83,7 +83,7 @@ static char* readline(FILE *input) {
 
 	while(strrchr(line,'\n') == NULL) {
 		max_line_len *= 2;
-		line = (char *) realloc(line, max_line_len);
+		line = (char *) realloc(line, (size_t)max_line_len);
 		len = (int) strlen(line);
 		if(fgets(line+len, max_line_len-len, input) == NULL)
 			break;
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 	parse_command_line(argc, argv, input_file_name, model_file_name);
 	read_problem(input_file_name);
 
-	profile = Malloc(struct svm_model *, num_model);
+	profile = Malloc(struct svm_model *, (unsigned long)num_model);
 
 	for(i = 0; i < num_model; i++) {
 		error_msg = svm_check_parameter(prob_set[i], &param);
@@ -138,9 +138,9 @@ int main(int argc, char **argv) {
 void do_cross_validation() {
 	int i, n;
 	int total_correct = 0;
-	double total_error = 0;
-	double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
-	double *target = Malloc(double, param.num_train);
+	// double total_error = 0;
+	// double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
+	double *target = Malloc(double, (unsigned long)param.num_train);
 
 	for (n = 0; n < num_model; n++) {
 		svm_cross_validation(prob_set[n], &param, nr_fold, target);
@@ -258,8 +258,8 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 				break;
 			case 'w':
 				++param.nr_weight;
-				param.weight_label = (int *)realloc(param.weight_label, sizeof(int)*param.nr_weight);
-				param.weight = (double *)realloc(param.weight, sizeof(double)*param.nr_weight);
+				param.weight_label = (int *)realloc(param.weight_label, sizeof(int)*(unsigned long)param.nr_weight);
+				param.weight = (double *)realloc(param.weight, sizeof(double)*(unsigned long)param.nr_weight);
 				param.weight_label[param.nr_weight-1] = atoi(&argv[i-1][2]);
 				param.weight[param.nr_weight-1] = atof(argv[i]);
 				break;
@@ -315,11 +315,11 @@ void read_problem(const char *filename) {
 	/* This is tailored specifically for our cases since we know how many training instances for each model. 
 	 * The training file itself contains training instances for all models. 
 	 */
-	elements = param.num_train * param.num_train + 2 * param.num_train; /* We also know the total number of elements. */
+	elements = (unsigned long)param.num_train * (unsigned long)param.num_train + 2 * (unsigned long)param.num_train; /* We also know the total number of elements. */
 	total_line = 0;
 
 	max_line_len = 1024;
-	line = Malloc(char, max_line_len);
+	line = Malloc(char, (unsigned long)max_line_len);
 
 	while(readline(fp) != NULL) {
 		++total_line;
@@ -329,8 +329,8 @@ void read_problem(const char *filename) {
 	/* num_model is the number of models that we are building. 
 	 * This corresponds to the number of svm problems that we will see. */
 	num_model = total_line / param.num_train;
-	prob_set = Malloc(struct svm_problem *, num_model);
-	x_spaces = Malloc(struct svm_node *, num_model);
+	prob_set = Malloc(struct svm_problem *, (unsigned long)num_model);
+	x_spaces = Malloc(struct svm_node *, (unsigned long)num_model);
 
 	for (n = 0; n < num_model; n++) {
 		
@@ -338,8 +338,8 @@ void read_problem(const char *filename) {
 		prob_set[n] = prob;
 
 		prob->l = param.num_train;
-		prob->y = Malloc(double, prob->l);
-		prob->x = Malloc(struct svm_node *, prob->l);
+		prob->y = Malloc(double, (unsigned long)prob->l);
+		prob->x = Malloc(struct svm_node *, (unsigned long)prob->l);
 
 		x_space = Malloc(struct svm_node, elements);
 		x_spaces[n] = x_space;
