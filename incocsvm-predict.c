@@ -197,6 +197,7 @@ int main(int argc, char **argv) {
 					exit_with_help();
 				}
 				total_model = n;
+				break;
 			case 'b':
 				predict_probability = atoi(argv[i]);
 				if (predict_probability != 0) {

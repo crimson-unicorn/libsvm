@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wconversion -O3 -fPIC
 SHVER = 2
 OS = $(shell uname)
 
-all: svm-train svm-predict svm-scale incocsvm-train incocsvm-predict
+all: svm-train svm-predict svm-scale incocsvm-preprocess incocsvm-train incocsvm-predict
 
 lib: svm.o
 	if [ "$(OS)" = "Darwin" ]; then \
@@ -21,9 +21,11 @@ svm-train: svm-train.c svm.o
 	$(CXX) $(CFLAGS) svm-train.c svm.o -o svm-train -lm
 incocsvm-train: incocsvm-train.c svm.o
 	$(CXX) $(CFLAGS) incocsvm-train.c svm.o -o incocsvm-train -lm
+incocsvm-preprocess: incocsvm-preprocess.c
+	$(CXX) $(CFLAGS) incocsvm-preprocess.c -o incocsvm-preprocess
 svm-scale: svm-scale.c
 	$(CXX) $(CFLAGS) svm-scale.c -o svm-scale
 svm.o: svm.cpp svm.h
 	$(CXX) $(CFLAGS) -c svm.cpp
 clean:
-	rm -f *~ svm.o svm-train svm-predict svm-scale incocsvm-train libsvm.so.$(SHVER)
+	rm -f *~ svm.o svm-train svm-predict svm-scale incocsvm-train incocsvm-predict incocsvm-preprocess libsvm.so.$(SHVER)
