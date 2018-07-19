@@ -118,13 +118,16 @@ int main(int argc, char **argv) {
 	int t = 0;
 	unsigned long** train_instances[l];
 	unsigned long** test_instances[t];
+	fprintf(stderr, "Input Information: ======\n");
 	// parse options
 	for (i = 1; i < argc; i++) {
-		if(argv[i][0] != '-') break;
+		if(argv[i][0] != '-') 
+			break;
 		++i;
 		switch(argv[i-1][1]) {
 			case 'm':
 				m = atoi(argv[i]);
+				fprintf(stderr, "Number of models: %d\n", m);
 				if (m <= 0) {
 					fprintf(stderr,"You need to provide the number of models.");
 					exit_with_help();
@@ -132,6 +135,7 @@ int main(int argc, char **argv) {
 				break;
 			case 's':
 				s = atoi(argv[i]);
+				fprintf(stderr, "Sketch Size: %d\n", s);
 				if (s <= 0) {
 					fprintf(stderr,"You need to provide the size of the sketch.");
 					exit_with_help();
@@ -139,6 +143,7 @@ int main(int argc, char **argv) {
 				break;
 			case 'l':
 				l = atoi(argv[i]);
+				fprintf(stderr, "Number of training instances: %d\n", l);
 				if (l <= 0) {
 					fprintf(stderr,"You must provide the total number of training instances.\n");
 					exit_with_help();	
@@ -146,6 +151,7 @@ int main(int argc, char **argv) {
 				break;
 			case 't':
 				t = atoi(argv[i]);
+				fprintf(stderr, "Number of testing instances: %d\n", t);
 				if (t <= 0) {
 					fprintf(stderr,"You must provide the total number of test instances.\n");
 					exit_with_help();	
@@ -157,13 +163,18 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	if(i >= argc)
+		exit_with_help();
+
 	output_train = fopen(argv[i+2], "w");
+	fprintf(stderr, "Train output file name: %s\n", argv[i+2]);
 	if(output_train == NULL) {
 		fprintf(stderr, "Canot open output training file %s\n", argv[i+2]);
 		exit(1);
 	}
 
 	output_test = fopen(argv[i+3], "w");
+	fprintf(stderr, "Test output file name: %s\n", argv[i+3]);
 	if(output_test == NULL) {
 		fprintf(stderr, "Canot open output test file %s\n", argv[i+3]);
 		exit(1);
@@ -171,17 +182,37 @@ int main(int argc, char **argv) {
 
 
 	strcpy(sketches_train_base_name, argv[i]);
+	fprintf(stderr, "Training sketch input base file name: %s\n", argv[i]);
 	strcpy(sketches_name, sketches_train_base_name);
 
 	for(j = 0; j < l; j++) {
 		sprintf(instance_num, "%d", j);
 		strcat(sketches_name, instance_num);
+		strcat(sketches_name, ".txt");
+		fprintf(stderr, "Training sketch input file name (%d): %s\n", j, sketches_name);
 		train_instances[j] = read_sketches(sketches_name, m, s);
 		if (train_instances[j] == NULL) {
 			fprintf(stderr, "can't read instance %d from train file %s\n", j, sketches_name);
 			exit(1);
 		}
 		strcpy(sketches_name, sketches_train_base_name);
+	}
+
+	strcpy(sketches_test_base_name, argv[i+1]);
+	fprintf(stderr, "Testing sketch input base file name is: %s\n", argv[i+1]);
+	strcpy(sketches_name, sketches_test_base_name);
+
+	for(j = 0; j < t; j++) {
+		sprintf(instance_num, "%d", j);
+		strcat(sketches_name, instance_num);
+		strcat(sketches_name, ".txt");
+		fprintf(stderr, "Testing sketch input file name (%d): %s\n", j, sketches_name);
+		test_instances[j] = read_sketches(sketches_name, m, s);
+		if (test_instances[j] == NULL) {
+			fprintf(stderr, "can't read instance %d from test file %s\n", j, sketches_name);
+			exit(1);
+		}
+		strcpy(sketches_name, sketches_test_base_name);
 	}
 
 	for (i = 0; i < m; i++) {
@@ -192,20 +223,6 @@ int main(int argc, char **argv) {
 			}
 			fprintf(output_train, "\n");
 		}
-	}
-
-	strcpy(sketches_test_base_name, argv[i+1]);
-	strcpy(sketches_name, sketches_test_base_name);
-
-	for(j = 0; j < t; j++) {
-		sprintf(instance_num, "%d", j);
-		strcat(sketches_name, instance_num);
-		test_instances[j] = read_sketches(sketches_name, m, s);
-		if (test_instances[j] == NULL) {
-			fprintf(stderr, "can't read instance %d from test file %s\n", j, sketches_name);
-			exit(1);
-		}
-		strcpy(sketches_name, sketches_test_base_name);
 	}
 
 	for (i = 0; i < t; i++) {
