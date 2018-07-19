@@ -60,7 +60,7 @@ int hamming_distance(unsigned long* a, unsigned long* b, int size) {
  *
  */
 unsigned long** read_sketches(const char *sketch_file_name, int num_model, int sketch_size) {
-	int i, j;
+	int i, j, k;
 	char *p, *endptr;
 	FILE *fp = fopen(sketch_file_name, "r");
 	if(fp == NULL) 
@@ -70,6 +70,8 @@ unsigned long** read_sketches(const char *sketch_file_name, int num_model, int s
 	max_line_len = 1024;
 	line = Malloc(char, (unsigned long)max_line_len);
 
+	fprintf(stderr, "\t\t======== Load Sketches in Memory ========\n");
+	fprintf(stderr, "\t\tReading sketch file: %s\n", sketch_file_name);
 	for (i = 0; i < num_model; i++) {
 		read_single_line(fp);
 		unsigned long* sketch = Malloc(unsigned long, (unsigned long)sketch_size);
@@ -81,11 +83,18 @@ unsigned long** read_sketches(const char *sketch_file_name, int num_model, int s
 			sketch[j] = strtoul(p, &endptr, 10);
 		}
 		sketches[i] = sketch;
+		fprintf(stderr, "\t\tSketch #%d: ", i);
+		for (k = 0; k < sketch_size; k++) {
+			fprintf(stderr, "%lu ", sketches[i][k]);
+		}
+		fprintf(stderr, "\n");
 	}
 	free(line);
 
 	if (ferror(fp) != 0 || fclose(fp) != 0)
 		return NULL;
+
+	fprintf(stderr, "\t\t======== Done ========\n");
 
 	return sketches;
 }
@@ -111,14 +120,12 @@ int main(int argc, char **argv) {
 	char sketches_test_base_name[1024];
 	char sketches_name[1024];
 	char instance_num[256];
-	int i, j, k;
+	int i, j, k, d;
 	int m = 0;
 	int s = 0;
 	int l = 0;
 	int t = 0;
-	unsigned long** train_instances[l];
-	unsigned long** test_instances[t];
-	fprintf(stderr, "Input Information: ======\n");
+	fprintf(stderr, "======== User Input Information ========\n");
 	// parse options
 	for (i = 1; i < argc; i++) {
 		if(argv[i][0] != '-') 
@@ -163,6 +170,9 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	unsigned long** train_instances[l];
+	unsigned long** test_instances[t];
+
 	if(i >= argc)
 		exit_with_help();
 
@@ -179,7 +189,6 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Canot open output test file %s\n", argv[i+3]);
 		exit(1);
 	}
-
 
 	strcpy(sketches_train_base_name, argv[i]);
 	fprintf(stderr, "Training sketch input base file name: %s\n", argv[i]);
@@ -199,7 +208,7 @@ int main(int argc, char **argv) {
 	}
 
 	strcpy(sketches_test_base_name, argv[i+1]);
-	fprintf(stderr, "Testing sketch input base file name is: %s\n", argv[i+1]);
+	fprintf(stderr, "Testing sketch input base file name: %s\n", argv[i+1]);
 	strcpy(sketches_name, sketches_test_base_name);
 
 	for(j = 0; j < t; j++) {
@@ -215,26 +224,67 @@ int main(int argc, char **argv) {
 		strcpy(sketches_name, sketches_test_base_name);
 	}
 
+	/* The format of the training output file:
+	 * <label> 0:i 1:K(xi, x1) 2:K(xi, x2) ... L:K(xi, xL)
+	 * <label> can be any value, ignored
+	 * i: The ID of training instances, starting from 1.
+	 *
+	 * The arrangement of the file:
+	 * training sketch 1, first model
+	 * training sketch 2, first model
+	 * ...
+	 * training sketch 1, second model
+	 * training sketch 2, second model
+	 * ...
+	 *
+	 */
+	fprintf(stderr, "======== End of User Input ========\n");
+	fprintf(stderr, "======== Computing Training Input ========\n");
 	for (i = 0; i < m; i++) {
 		for (j = 0; j < l; j++) {
 			fprintf(output_train, "%d 0:%d ", 1, j + 1);
 			for (k = 0; k < l; k++) {
-				fprintf(output_train, "%d:%d ", k + 1, hamming_distance(train_instances[j][i], train_instances[k][i], s));
+				d = hamming_distance(train_instances[j][i], train_instances[k][i], s);
+				fprintf(stderr, "Training Hamming distance between %d and %d in model #%d: %d\n", j + 1, k + 1, i, d);
+				fprintf(output_train, "%d:%d ", k + 1, d);
 			}
 			fprintf(output_train, "\n");
 		}
 	}
 
+	if (ferror(output_train) != 0 || fclose(output_train) != 0)
+		return -1;
+
+	fprintf(stderr, "======== Done ========\n");
+	fprintf(stderr, "======== Computing Test Input ========\n");
+
+	/* The format of the test output file:
+	 * <label> 0:? 1:K(x, x1) 2:K(x, x2) ... L:K(x, xL)
+	 * <label> must be +1/-1
+	 * ?: Can be any value, ignored
+	 * K(x, xL): Hamming distance between the test sketch x and the L training sketch
+	 * 
+	 * The arrangement of the file:
+	 * test sketch 1, first model
+	 * test sketch 1, second model
+	 * ...
+	 * test sketch 2, first model
+	 * ...
+	 * 
+	 */
 	for (i = 0; i < t; i++) {
 		for (j = 0; j < m; j++) {
 			//TODO: TEST LABEL NEEDS TO BE DETERMINED SOMEHOW.
 			fprintf(output_test, "%d 0:0 ", 1);
 			for (k = 0; k < l; k++) {
-				fprintf(output_test, "%d:%d ", k + 1, hamming_distance(train_instances[i][m], train_instances[k][m], s));
+				d = hamming_distance(test_instances[i][j], train_instances[k][j], s);
+				fprintf(stderr, "Test Hamming distance between testing %d and training %d in model #%d: %d\n", i + 1, k + 1, j, d);
+				fprintf(output_test, "%d:%d ", k + 1, d);
 			}
 			fprintf(output_test, "\n");
 		}
 	}
+	fprintf(stderr, "======== Done ========\n");
 
 	for(j = 0; j < l; j++) {
 		free_sketches(train_instances[j], m);
@@ -243,6 +293,9 @@ int main(int argc, char **argv) {
 	for(j = 0; j < t; j++) {
 		free_sketches(test_instances[j], m);
 	}
+
+	if (ferror(output_test) != 0 || fclose(output_test) != 0)
+		return -1;
 
 	return 0;
 }
